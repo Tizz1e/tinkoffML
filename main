@@ -1,0 +1,49 @@
+from re import sub
+import argparse
+
+
+def levenshtein_distance(src1, src2):
+    n, m = len(src1), len(src2)
+    if n > m:
+        src1, text2 = src2, src1
+        n, m = m, n
+    current_row = range(n + 1)
+    for i in range(1, m + 1):
+        previous_row, current_row = current_row, [i] + [0] * n
+        for j in range(1, n + 1):
+            add, delete, change = previous_row[j] + 1, current_row[j - 1] + 1, previous_row[j - 1]
+            if src1[j - 1] != src2[i - 1]:
+                change += 1
+            current_row[j] = min(add, delete, change)
+    return current_row[n]
+
+
+def delete_comments(text):
+    result = list()
+    text = sub('#.*', '', text)
+    for i in text:
+        if i not in [' ', '\n']:
+            result.append(i)
+    return ''.join(result)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('InData', type=str)
+    parser.add_argument('OutData', type=str)
+    args = parser.parse_args()
+    result = list()
+    with open(args.InData) as load_data:
+        for data in load_data:
+            data = data.split()
+            with open(data[0]) as text1:
+                source1 = delete_comments(text1.read())
+            with open(data[1]) as text2:
+                source2 = delete_comments(text2.read())
+            calc = levenshtein_distance(source1, source2)
+            calc /= len(source2)
+            result.append(calc)
+    with open(args.OutData, 'w') as data:
+        for score in result:
+            data.write(score, '\n')
+
